@@ -4,3 +4,6 @@
    sensitive = true
  }
  
+ variable "gandi_token" {
+   sensitive = true
+ }
