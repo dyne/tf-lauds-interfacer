@@ -9,14 +9,14 @@ terraform {
       source   = "go-gandi/gandi"
       version = "~> 2.0"
     }
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "4.38.0"
-    }
-    # ansible = {
-    #   version = "~> 1.3.0"
-    #   source  = "ansible/ansible"
+    # cloudflare = {
+    #   source  = "cloudflare/cloudflare"
+    #   version = "4.38.0"
     # }
+    ansible = {
+      version = "~> 1.3.0"
+      source  = "ansible/ansible"
+    }
   }
 }
 provider "hcloud" {
@@ -25,14 +25,11 @@ provider "hcloud" {
 provider "gandi" {
   personal_access_token = var.gandi_token
 }
-<<<<<<< Updated upstream
-resource "hcloud_server" "node2" {
-=======
-provider "cloudflare" {
-  api_token = var.cloudflare_token
-}
+# resource "hcloud_server" "node2" {
+# provider "cloudflare" {
+#   api_token = var.cloudflare_token
+# }
 resource "hcloud_server" "node1" {
->>>>>>> Stashed changes
   name        = "node1"
   image       = "debian-12"
   server_type = "cx22"
@@ -41,7 +38,6 @@ resource "hcloud_server" "node1" {
 
 output "instance_public_ip" {
   description = "Public IP of Hetzner cloud instance"
-<<<<<<< Updated upstream
   value     = hcloud_server.node2.ipv4_address
 }
 
@@ -55,13 +51,12 @@ resource "gandi_livedns_record" "tofu_dyne_im" {
     hcloud_server.node2
   ]
 }
-=======
   value       = hcloud_server.node1.ipv4_address
 }
 
 resource "gandi_livedns_record" "tofu_dyne_im" {
   zone       = "dyne.im"
-  name       = "interfacer-test-2"
+  name       = "interfacer-test"
   type       = "A"
   ttl        = 3600
   values     = [hcloud_server.node1.ipv4_address] //["127.0.0.2"]
@@ -94,7 +89,6 @@ resource "gandi_livedns_record" "tofu_zenflows_dyne_im" {
 #   type    = "A"
 #   ttl     = 300
 # }
-
 
 
 # resource "ansible_vault" "secrets" {
@@ -135,4 +129,3 @@ output "instance_name" {
   description = "DNS name of Hetzner cloud instance"
   value       = "${gandi_livedns_record.tofu_dyne_im.name}.${gandi_livedns_record.tofu_dyne_im.zone}"
 }
->>>>>>> Stashed changes
