@@ -18,16 +18,16 @@ provider "hcloud" {
 provider "gandi" {
   personal_access_token = var.gandi_token
 }
-resource "hcloud_server" "node1" {
+resource "hcloud_server" "node2" {
   name        = "node1"
-  image       = "debian-11"
+  image       = "debian-12"
   server_type = "cx22"
   ssh_keys    = ["antoniotrkdz@trkdz-d7-ceres"]
 }
 
 output "instance_public_ip" {
   description = "Public IP of Hetzner cloud instance"
-  value     = hcloud_server.node1.ipv4_address
+  value     = hcloud_server.node2.ipv4_address
 }
 
 resource "gandi_livedns_record" "tofu_dyne_im" {
@@ -35,8 +35,8 @@ resource "gandi_livedns_record" "tofu_dyne_im" {
   name = "tofu"
   type = "A"
   ttl = 300
-  values = [hcloud_server.node1.ipv4_address] //["127.0.0.2"]
+  values = [hcloud_server.node2.ipv4_address] //["127.0.0.2"]
   depends_on = [
-    hcloud_server.node1
+    hcloud_server.node2
   ]
 }

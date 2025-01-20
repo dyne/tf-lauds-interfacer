@@ -1,0 +1,4 @@
+[submodule "interfacer-devops"]
+path = interfacer-devops
+url = git@github.com:interfacerproject/devops.git
+branch = test
