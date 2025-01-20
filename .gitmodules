@@ -1,4 +1,9 @@
 [submodule "interfacer-devops"]
+<<<<<<< Updated upstream
 path = interfacer-devops
 url = git@github.com:interfacerproject/devops.git
 branch = test
+=======
+	path = interfacer-devops
+	url = git@github.com:interfacerproject/devops.git
+>>>>>>> Stashed changes
