@@ -1,0 +1,116 @@
+# ---
+# - name: Run "apt-get update"
+#   ansible.builtin.apt:
+#     update_cache: yes
+
+# - name: Wait until the apt lock file is removed
+#   ansible.builtin.wait_for:
+#     path: /var/lib/dpkg/lock-frontend
+#     state: absent
+
+# - name: Install pre-reqs for Docker and Ansible
+#   ansible.builtin.apt:
+#     pkg:
+#       - apt-transport-https
+#       - ca-certificates
+#       - curl
+#       - python3-pip
+#       - python3-setuptools
+# apt: name={{ item }} state=latest update_cache=yes
+# update_cache: yes
+# loop:
+#   [
+#     "apt-transport-https",
+#     "ca-certificates",
+#     "curl",
+#     "python3-pip",
+#     "python3-setuptools",
+#   ]
+
+# - name: Update source list and then install docker
+#   apt: update_cache=yes name=docker.io state=latest
+
+# - name: Wait until pip3 file is present
+#   ansible.builtin.wait_for:
+#     path: /usr/bin/pip3
+
+# - name: Install the Docker module for Python, required by ansible
+#   pip:
+#     name: docker
+---
+- debug: var=ansible_all_ipv4_addresses
+- debug: var=ansible_default_ipv4.address
+
+# - name: Update and upgrade all packages to the latest version
+#   ansible.builtin.apt:
+#     update_cache: true
+#     upgrade: dist
+#     cache_valid_time: 3600
+
+- name: Install required packages
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - software-properties-common
+    update_cache: true
+
+- name: Create directory for Docker's GPG key
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Docker's official GPG key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    keyring: /etc/apt/keyrings/docker.gpg
+    state: present
+
+- name: Print architecture variables
+  ansible.builtin.debug:
+    msg: "Architecture: {{ ansible_architecture }}, Codename: {{ ansible_lsb.codename }}"
+
+- name: Add Docker repository
+  ansible.builtin.apt_repository:
+    repo:
+      deb [arch={{ arch_mapping[ansible_architecture] | default(ansible_architecture) }}
+      signed-by=/etc/apt/keyrings/docker.gpg]
+      https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable
+    filename: docker
+    state: present
+
+- name: Install Docker and related packages
+  ansible.builtin.apt:
+    # name: "{{ item }}"
+    # state: present
+    # loop:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    update_cache: true
+
+- name: Add Docker group
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add user to Docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: true
+
+- name: Enable and start Docker services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop:
+    - docker.service
+    - containerd.service
