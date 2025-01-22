@@ -11,5 +11,3 @@
  variable "cloudflare_token" {
    sensitive = true
  }
-
-# HERE KEY: HTwZt-b2kdAbv1mQdx2cczmjy6xXrgeEAO5woOnaXZo

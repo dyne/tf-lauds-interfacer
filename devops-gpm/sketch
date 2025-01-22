@@ -1,0 +1,9 @@
+apt update
+apt dist-upgrade -y
+reboot
+apt install sshguard -y
+apt install unattended-upgrades -y
+apt install vim
+apt install screen
+apt install tmux
+apt install borgbackup

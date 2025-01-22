@@ -1,0 +1,37 @@
+---
+- name: GPM
+  hosts: all
+  user: root
+  tasks:
+    - name: Update and upgrade all packages to the latest version
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+        # cache_valid_time: 3600
+
+    # - name: Reboot the machine
+    #   # ansible.builtin.reboot:
+    #   #   msg: "Rebooting machine"
+
+    - name: Install required packages
+      ansible.builtin.apt:
+        pkg:
+          - sshguard
+          - unattended-upgrades
+          - vim
+          - screen
+          - tmux
+          - borgbackup
+        update_cache: true
+
+    # - name: Add lines to authorized_keys
+    #   ansible.builtin.lineinfile:
+    #     dest: /root/.ssh/authorized_keys
+    #     line: "{{ line }}"
+    #   with_lines: cat /home/antoniotrkdz/dyne/valburga/devops-gpm/gpm-devops/templates/authorized_keys.j2
+
+    - name: Add text block from a file
+      ansible.builtin.blockinfile:
+        path: /root/.ssh/authorized_keys
+        block: "{{ lookup('ansible.builtin.file', 'templates/authorized_keys.j2') }}"
+        state: present
