@@ -42,7 +42,7 @@ output "instance_public_ip" {
 
 resource "gandi_livedns_record" "gpm_dyne_im" {
   zone       = "dyne.im"
-  name       = "gpm"
+  name       = var.name
   type       = "A"
   ttl        = 300
   values     = [hcloud_server.gpm.ipv4_address]
@@ -80,25 +80,43 @@ resource "null_resource" "run_ansible" {
   }
 }
 
-# Remove SSH key from known_hosts upon destroy
-# resource "null_resource" "remove_ssh_keys" {
-#   depends_on = [hcloud_server.gpm, gandi_livedns_record.gpm_dyne_im]
-#   for_each = {
-#     "hcloud_server" = hcloud_server.gpm.ipv4_address
-#     "gandi_record"  = "${gandi_livedns_record.gpm_dyne_im.name}.${gandi_livedns_record.gpm_dyne_im.zone}"
-#   }
+# Remove SSH key from remote host upon destroy
+resource "null_resource" "remove_remote_ssh_keys" {
+  triggers = {
+    remote_host_ip = hcloud_server.gpm.ipv4_address
+  }
+  provisioner "remote-exec" {
+    when    = destroy
+    connection {
+      host     = "${self.triggers["remote_host_ip"]}"  # Replace with your resource's IP
+      user     = "root"                                # Replace with the remote user
+      private_key = file("~/.ssh/id_rsa")              # Path to your private SSH key
+    }
+    
+    # Command to delete the file
+    inline = [
+      "which srm && srm /root/.ssh/authorized_keys || rm /root/.ssh/authorized_keys",
+      "[ ! -f /root/.ssh/authorized_keys ]"
+    ]
+  }
+}
 
-#   provisioner "local-exec" {
-#     when    = destroy
-#     command = <<EOT
-#     if [[ "${each.key}" == "hcloud_server" ]]; then
-#       ssh-keygen -f ~/.ssh/known_hosts -R ${hcloud_server.gpm.ipv4_address}
-#     elif [[ "${each.key}" == "gandi_record" ]]; then
-#       ssh-keygen -f ~/.ssh/known_hosts -R ${gandi_livedns_record.gpm_dyne_im.name}.${gandi_livedns_record.gpm_dyne_im.zone}
-#     fi
-#     EOT
-#   }
-# }
+# Remove SSH key from known_hosts upon destroy
+resource "null_resource" "remove_ssh_keys" {
+  # depends_on = [gandi_livedns_record.gpm_dyne_im]
+  triggers = {
+    keys_id = hcloud_server.gpm.ipv4_address
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "ssh-keygen -f ~/.ssh/known_hosts -R ${self.triggers["keys_id"]}"
+  }
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo ${self.triggers["keys_id"]}"
+  }
+}
 
 # Create a record
 # resource "cloudflare_record" "tofutwo" {

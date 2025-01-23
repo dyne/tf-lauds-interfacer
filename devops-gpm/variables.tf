@@ -11,3 +11,5 @@
  variable "cloudflare_token" {
    sensitive = true
  }
+
+ variable "name" {}
