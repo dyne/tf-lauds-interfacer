@@ -1,2 +1,13 @@
+# Ignore Terraform's working directory
+**/.terraform/
+
+# Ignore local state files (if not using a remote backend)
+**/*.tfstate
+**/*.tfstate.*
+
+# Ignore crash logs
+**/crash.log
+
+# Ignore Terraform variable files (optional, if they contain sensitive data)
 **/*.tfvars
-**/*.tfstate*
+**/*.tfvars.json
