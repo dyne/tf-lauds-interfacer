@@ -66,7 +66,7 @@ resource "null_resource" "wait_for_ping" {
   depends_on = [hcloud_server.gpm]
 
   provisioner "local-exec" {
-    command = "./ping_gpm.sh ${hcloud_server.gpm.ipv4_address}"
+    command = "../ping_new.sh ${hcloud_server.gpm.ipv4_address}"
   }
 }
 
