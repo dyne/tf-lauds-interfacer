@@ -44,36 +44,36 @@ output "instance_public_ip" {
   value       = hcloud_server.interfacer.ipv4_address
 }
 
-resource "gandi_livedns_record" "tofu_dyne_im" {
+resource "gandi_livedns_record" "dyne_im" {
   zone       = "dyne.im"
-  name       = "interfacer-test"
+  name       = var.name
   type       = "A"
   ttl        = 300
   values     = [hcloud_server.interfacer.ipv4_address]
   depends_on = [hcloud_server.interfacer]
 }
 
-resource "gandi_livedns_record" "tofu_proxy_dyne_im" {
+resource "gandi_livedns_record" "proxy_dyne_im" {
   zone       = "dyne.im"
-  name       = "proxy.${gandi_livedns_record.tofu_dyne_im.name}"
+  name       = "proxy.${gandi_livedns_record.dyne_im.name}"
   type       = "A"
-  ttl        = 3600
+  ttl        = 300
   values     = [hcloud_server.interfacer.ipv4_address]
   depends_on = [hcloud_server.interfacer]
 }
 
-resource "gandi_livedns_record" "tofu_zenflows_dyne_im" {
+resource "gandi_livedns_record" "zenflows_dyne_im" {
   zone       = "dyne.im"
-  name       = "zenflows.${gandi_livedns_record.tofu_dyne_im.name}"
+  name       = "zenflows.${gandi_livedns_record.dyne_im.name}"
   type       = "A"
-  ttl        = 3600
+  ttl        = 300
   values     = [hcloud_server.interfacer.ipv4_address]
   depends_on = [hcloud_server.interfacer]
 }
 
 output "instance_name" {
   description = "DNS name of Hetzner cloud instance"
-  value       = "${gandi_livedns_record.tofu_dyne_im.name}.${gandi_livedns_record.tofu_dyne_im.zone}"
+  value       = "${gandi_livedns_record.dyne_im.name}.${gandi_livedns_record.dyne_im.zone}"
 }
 
 # Generate the inventory/hosts.yml file
@@ -81,7 +81,7 @@ data "template_file" "ansible_inventory" {
   template = <<EOT
 all:
   hosts:
-    ${var.name}:
+    ${gandi_livedns_record.dyne_im.name}.${gandi_livedns_record.dyne_im.zone}:
 EOT
 }
 
@@ -95,7 +95,7 @@ resource "null_resource" "wait_for_ping" {
   depends_on = [hcloud_server.interfacer]
 
   provisioner "local-exec" {
-    command = "../ping_new.sh ${hcloud_server.interfacer.ipv4_address}"
+    command = "../ping_new.sh ${gandi_livedns_record.dyne_im.name}.${gandi_livedns_record.dyne_im.zone}"
   }
 }
 
@@ -104,7 +104,7 @@ resource "null_resource" "run_ansible" {
   depends_on = [null_resource.wait_for_ping]
 
   provisioner "local-exec" {
-    command = "ansible-playbook -i ${local_file.ansible_inventory.filename} interfacer-devops/install-proxy.yaml"
+    command = "ansible-playbook -i ${local_file.ansible_inventory.filename} --vault-password-file interfacer-devops/.vault_pass interfacer-devops/install-proxy.yaml"
   }
 }
 
@@ -112,7 +112,7 @@ resource "null_resource" "run_ansible" {
 resource "null_resource" "remove_ssh_keys" {
   # depends_on = [gandi_livedns_record.gpm_dyne_im]
   triggers = {
-    keys_id = "${gandi_livedns_record.tofu_dyne_im.name}.${gandi_livedns_record.tofu_dyne_im.zone}"
+    keys_id = "${gandi_livedns_record.dyne_im.name}.${gandi_livedns_record.dyne_im.zone}"
   }
 
   provisioner "local-exec" {
