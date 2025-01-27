@@ -32,8 +32,8 @@ provider "cloudflare" {
   api_token = var.cloudflare_token
 }
 
-resource "hcloud_server" "node1" {
-  name        = "node1"
+resource "hcloud_server" "interfacer" {
+  name        = "interfacer.staging"
   image       = "debian-12"
   server_type = "cx22"
   ssh_keys    = ["antoniotrkdz@trkdz-d7-ceres"]
@@ -41,7 +41,7 @@ resource "hcloud_server" "node1" {
 
 output "instance_public_ip" {
   description = "Public IP of Hetzner cloud instance"
-  value       = hcloud_server.node1.ipv4_address
+  value       = hcloud_server.interfacer.ipv4_address
 }
 
 resource "gandi_livedns_record" "tofu_dyne_im" {
@@ -49,8 +49,8 @@ resource "gandi_livedns_record" "tofu_dyne_im" {
   name       = "interfacer-test"
   type       = "A"
   ttl        = 300
-  values     = [hcloud_server.node1.ipv4_address]
-  depends_on = [hcloud_server.node1]
+  values     = [hcloud_server.interfacer.ipv4_address]
+  depends_on = [hcloud_server.interfacer]
 }
 
 resource "gandi_livedns_record" "tofu_proxy_dyne_im" {
@@ -58,8 +58,8 @@ resource "gandi_livedns_record" "tofu_proxy_dyne_im" {
   name       = "proxy.${gandi_livedns_record.tofu_dyne_im.name}"
   type       = "A"
   ttl        = 3600
-  values     = [hcloud_server.node1.ipv4_address]
-  depends_on = [hcloud_server.node1]
+  values     = [hcloud_server.interfacer.ipv4_address]
+  depends_on = [hcloud_server.interfacer]
 }
 
 resource "gandi_livedns_record" "tofu_zenflows_dyne_im" {
@@ -67,8 +67,8 @@ resource "gandi_livedns_record" "tofu_zenflows_dyne_im" {
   name       = "zenflows.${gandi_livedns_record.tofu_dyne_im.name}"
   type       = "A"
   ttl        = 3600
-  values     = [hcloud_server.node1.ipv4_address]
-  depends_on = [hcloud_server.node1]
+  values     = [hcloud_server.interfacer.ipv4_address]
+  depends_on = [hcloud_server.interfacer]
 }
 
 output "instance_name" {
@@ -77,7 +77,7 @@ output "instance_name" {
 }
 
 # Generate the inventory/hosts.yml file
-resource "template_file" "ansible_inventory" {
+data "template_file" "ansible_inventory" {
   template = <<EOT
 all:
   hosts:
@@ -88,14 +88,14 @@ EOT
 # Write the inventory file to the filesystem
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/interfacer-devops/inventory/hosts.yml"
-  content  = template_file.ansible_inventory.rendered
+  content  = data.template_file.ansible_inventory.rendered
 }
 
 resource "null_resource" "wait_for_ping" {
-  depends_on = [hcloud_server.gpm]
+  depends_on = [hcloud_server.interfacer]
 
   provisioner "local-exec" {
-    command = "../ping_new.sh ${hcloud_server.gpm.ipv4_address}"
+    command = "../ping_new.sh ${hcloud_server.interfacer.ipv4_address}"
   }
 }
 
@@ -104,7 +104,7 @@ resource "null_resource" "run_ansible" {
   depends_on = [null_resource.wait_for_ping]
 
   provisioner "local-exec" {
-    command = "ansible-playbook -i ${local_file.ansible_inventory.filename} interfacer-devops/main.yaml"
+    command = "ansible-playbook -i ${local_file.ansible_inventory.filename} interfacer-devops/install-proxy.yaml"
   }
 }
 
@@ -112,7 +112,7 @@ resource "null_resource" "run_ansible" {
 resource "null_resource" "remove_ssh_keys" {
   # depends_on = [gandi_livedns_record.gpm_dyne_im]
   triggers = {
-    keys_id = "${gandi_livedns_record.gpm_dyne_im.name}.${gandi_livedns_record.gpm_dyne_im.zone}"
+    keys_id = "${gandi_livedns_record.tofu_dyne_im.name}.${gandi_livedns_record.tofu_dyne_im.zone}"
   }
 
   provisioner "local-exec" {
@@ -125,7 +125,7 @@ resource "null_resource" "remove_ssh_keys" {
 # resource "cloudflare_record" "tofutwo" {
 #   zone_id = "dyne.im"
 #   name    = "tofutwo"
-#   content = hcloud_server.node1.ipv4_address
+#   content = hcloud_server.interfacer.ipv4_address
 #   type    = "A"
 #   ttl     = 300
 # }
