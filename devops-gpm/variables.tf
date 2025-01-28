@@ -8,8 +8,8 @@
    sensitive = true
  }
 
- variable "cloudflare_token" {
-   sensitive = true
- }
+ variable "domain" {}
 
  variable "name" {}
+
+ variable "hetzner_ssh_key_name" {}
