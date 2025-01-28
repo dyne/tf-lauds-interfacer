@@ -104,7 +104,12 @@ resource "null_resource" "run_ansible" {
   depends_on = [null_resource.wait_for_ping]
 
   provisioner "local-exec" {
-    command = "ansible-playbook -i ${local_file.ansible_inventory.filename} --vault-password-file interfacer-devops/.vault_pass interfacer-devops/install-proxy.yaml"
+    command = <<EOT
+ansible-playbook -i ${local_file.ansible_inventory.filename} \
+--vault-password-file interfacer-devops/.vault_pass \
+-e domain_name=${gandi_livedns_record.dyne_im.name}.${gandi_livedns_record.dyne_im.zone} \
+interfacer-devops/install-proxy.yaml
+EOT
   }
 }
 
