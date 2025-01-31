@@ -11,3 +11,5 @@
 # Ignore Terraform variable files (optional, if they contain sensitive data)
 **/*.tfvars
 **/*.tfvars.json
+
+**/.terraform.lock.hcl
