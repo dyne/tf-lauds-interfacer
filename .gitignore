@@ -13,3 +13,7 @@
 **/*.tfvars.json
 
 **/.terraform.lock.hcl
+
+**/interfacer-devops-staging/.vault_pass
+**/interfacer-devops-staging/sshkey
+**/interfacer-devops-staging/inventory/hosts.yml

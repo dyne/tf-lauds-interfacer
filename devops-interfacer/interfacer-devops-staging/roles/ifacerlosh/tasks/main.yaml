@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2022-2023 Dyne.org foundation <foundation@dyne.org>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+---
+- name: Create base directory
+  file:
+    path: "{{ losh_basedir }}"
+    state: directory
+    owner: root
+    group: root
+
+- name: Copy import script
+  template:
+    src: losh_import.sh.j2
+    dest: "{{ losh_basedir }}/losh_import.sh"
+    owner: root
+    group: root
+
+- name: Copy env file
+  template:
+    src: .env.j2
+    dest: "{{ losh_basedir }}/.env"
+    owner: root
+    group: root
+
+- name: Changing perm of "losh_import.sh", adding "+x"
+  file: dest="{{ losh_basedir }}/losh_import.sh" mode=a+x
+
+- name: Set cron for losh import
+  cron:
+    name: "check losh available"
+    weekday: 0
+    job: "cd {{ losh_basedir }} && ./losh_import.sh"
+
