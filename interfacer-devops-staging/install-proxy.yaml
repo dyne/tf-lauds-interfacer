@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2022-2023 Dyne.org foundation <foundation@dyne.org>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+---
+- name: Generate random hexadecimal strings
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Add ssh keys from a template file
+      ansible.builtin.blockinfile:
+        path: /root/.ssh/authorized_keys
+        block: "{{ lookup('ansible.builtin.file', 'templates/authorized_keys.j2') }}"
+        state: present
+
+    - name: Generate the admin key
+      ansible.builtin.command: openssl rand -hex 64
+      register: random_admin_key
+      changed_when: random_admin_key.rc != 0 # <- Uses the return code to define when the task has changed.
+
+
+    - name: Generate the room salt
+      ansible.builtin.command: openssl rand -hex 64
+      register: random_room_salt
+      changed_when: random_room_salt.rc != 0 # <- Uses the return code to define when the task has changed.
+
+    - name: Ensure ./inventory/group_vars/all.yml exists
+      ansible.builtin.copy:
+        content: "# This file is managed by Ansible\n"
+        dest: ./inventory/group_vars/all/all.yml
+        force: false  # Do not overwrite if the file already exists
+        mode: preserve   # copy special mode that sets the same permissions as the source file
+
+
+    - name: Append the first random string to all.yml
+      ansible.builtin.lineinfile:
+        path: ./inventory/group_vars/all/all.yml
+        line: "admin_key: {{ random_admin_key.stdout }}"
+        regexp: "^admin_key:"
+        state: present
+        mode: "0664"
+
+    - name: Append the second random string to all.yml
+      ansible.builtin.lineinfile:
+        path: ./inventory/group_vars/all/all.yml
+        line: "room_salt: {{ random_room_salt.stdout }}"
+        regexp: "^room_salt:"
+        state: present
+        mode: "0664"
+
+    - name: Display the contents of all.yml
+      ansible.builtin.debug:
+        msg: "{{ lookup('file', './inventory/group_vars/all/all.yml') }}"
+
+- name: Install the inbox service
+  hosts: all
+  remote_user: root
+  roles:
+    - docker
+    - zenflows
+    - proxy
+    - gui
+    - ingress
+    - ifacerlosh

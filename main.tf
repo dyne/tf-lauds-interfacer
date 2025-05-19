@@ -9,10 +9,10 @@ terraform {
       source  = "go-gandi/gandi"
       version = "~> 2.0"
     }
-    cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = "4.38.0"
-    }
+    # cloudflare = {
+    #   source  = "cloudflare/cloudflare"
+    #   version = "4.38.0"
+    # }
   }
 }
 
@@ -97,7 +97,7 @@ EOT
 
 # Write the inventory file to the filesystem
 resource "local_file" "ansible_inventory" {
-  filename = "${path.module}/interfacer-devops/inventory/hosts.yml"
+  filename = "${path.module}/interfacer-devops-staging/inventory/hosts.yml"
   content  = data.template_file.ansible_inventory.rendered
 }
 
@@ -125,9 +125,9 @@ resource "null_resource" "run_ansible" {
   provisioner "local-exec" {
     command = <<EOT
 ansible-playbook -i ${local_file.ansible_inventory.filename} \
---vault-password-file interfacer-devops/.vault_pass \
+--vault-password-file interfacer-devops-staging/.vault_pass \
 -e domain_name=${local.hostname} \
-interfacer-devops/install-proxy.yaml
+interfacer-devops-staging/install-proxy.yaml
 EOT
   }
 }
