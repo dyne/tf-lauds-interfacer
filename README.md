@@ -1,4 +1,4 @@
-# Valburga
+# Interfacer Staging
 
 Follow the steps in (this guide)[https://justobjects.nl/terraform-first-steps/]
 
@@ -14,14 +14,3 @@ Follow the steps in (this guide)[https://justobjects.nl/terraform-first-steps/]
 9. Append terraform.tfvars `gandi_token = "{value}"`
 10. Append terraform.tfvars `hetzner_ssh_key_name = "{value}"`
 11. Append terraform.tfvars `private_ssh_key_path = "{value}"`
-
-
-## Create a new VM the Dyne way
-
-```bash
-cd devops-gpm/
-tofu init
-tofu plan # test before run
-tofu apply
-```
-1. Check on the hetzner dashboard if the VM was created correctly
